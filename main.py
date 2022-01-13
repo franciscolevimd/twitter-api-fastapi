@@ -149,7 +149,7 @@ def show_all_users():
     - last_name: str
     - birth_date: date
     """
-    with open("users.josn", "r", encoding="utf-8") as f:
+    with open("users.json", "r", encoding="utf-8") as f:
         results = json.loads(f.read())
         return results
 
