@@ -142,7 +142,7 @@ def show_all_users():
 
     Parameters:
 
-    Returns a json list with all users in the app, with the follow keys:
+    Returns a json list with all users in the app, with the following keys:
     - user_id: UUID
     - email: EmailStr
     - first_name: str
@@ -200,10 +200,25 @@ def update_user():
     status_code=status.HTTP_200_OK,
     summary="Show all tweets",
     tags=["Tweets"]
-
 )
 def show_all_tweets():
-    return {"Twitter API": "Working!"}
+    """
+    Show all Tweets
+
+    This path operation shows all tweets in the app
+
+    Parameters:
+
+    Returns a json list with all tweets in the app, with the following keys:
+    - tweet_id: UUID
+    - content: str
+    - created_at: datetime
+    - updated_at: Optional[datetime]
+    - by: User
+    """
+    with open("tweets.json", "r", encoding="utf-8") as f:
+        results = json.loads(f.read())
+        return results
 
 
 # ### Post a tweet
