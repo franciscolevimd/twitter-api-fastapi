@@ -167,7 +167,7 @@ def show_all_users():
 def show_user(
     user_id: UUID = Path(
         ...,
-        title="Person Id",
+        title="User ID",
         description="This is the user ID",
         example="3fa85f64-5717-4562-b3fc-2c963f66afa6"
     )
@@ -208,8 +208,44 @@ def show_user(
     summary="Delete an user",
     tags=["Users"]
 )
-def delete_user():
-    pass
+def delete_user(
+    user_id: UUID = Path(
+        ...,
+        title="User ID",
+        description="This is the user ID",
+        example="3fa85f64-5717-4562-b3fc-4c963f88afb0"
+    )
+):
+    """
+    Delete an User
+
+    This path operation delete a user of the app.
+
+    Parameters:
+    - Path parameter
+        - user_id: UUID
+
+    Returns a json with the deleted user information:
+    - user_id: UUID
+    - email: EmailStr
+    - first_name: str
+    - last_name: str
+    - birth_date: date
+    """
+    with open("users.json", "r+", encoding="utf-8") as f:
+        user_id_str = str(user_id)
+        users = json.loads(f.read())
+        for index in range(len(users)):
+            if users[index]["user_id"] == user_id_str:
+                result = users.pop(index)
+                f.seek(0)
+                f.write(json.dumps(users))
+                f.truncate()
+                return result
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This user doesn't exist!"
+        )
 
 
 # ### Update an user
