@@ -26,7 +26,10 @@ app = FastAPI()
 
 class UserBase(BaseModel):
     user_id: UUID = Field(...)
-    email: EmailStr = Field(..., example="arisaurio@mail.com")
+    email: EmailStr = Field(
+        ...,
+        example="arisaurio@gmail.com"
+    )
 
 
 class UserLogin(UserBase):
@@ -50,7 +53,10 @@ class User(UserBase):
         max_length=50,
         example="Rex"
     )
-    birth_date: Optional[date] = Field(default=None)
+    birth_date: Optional[date] = Field(
+        default=None,
+        example="2005-03-12"
+    )
 
 
 class UserRegister(User):
@@ -273,6 +279,8 @@ def update_user(
     Parameters:
     - Path parameter
         - user_id: UUID
+    - Request body parameter
+        - user: User
 
     Returns a json with the updated user information:
     - user_id: UUID
@@ -383,8 +391,40 @@ def post(tweet: Tweet = Body(...)):
     summary="Show a tweet",
     tags=["Tweets"]
 )
-def show_tweet():
-    pass
+def show_tweet(
+    tweet_id: UUID = Path(
+        ...,
+        title="Tweet ID",
+        description="This is the tweet ID",
+        example="3fa85f64-5717-4562-b3fc-2c963f66afa6"
+    )
+):
+    """
+    Show a Tweet
+
+    This path operation show a specific tweet.
+
+    Parameters:
+    - Path parameter
+        - tweet_id: UUID
+
+    Returns a json with the tweet information:
+    - tweet_id: UUID
+    - content: str
+    - created_at: datetime
+    - updated_at: Optional[datetime]
+    - by: User
+    """
+    with open("tweets.json", "r", encoding="utf-8") as f:
+        tweet_id_str = str(tweet_id)
+        tweets = json.loads(f.read())
+        for tweet in tweets:
+            if tweet["tweet_id"] == tweet_id_str:
+                return tweet
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This tweet doesn't exist!"
+        )
 
 
 # ### Delete a tweet
@@ -395,8 +435,44 @@ def show_tweet():
     summary="Delete a tweet",
     tags=["Tweets"]
 )
-def delete_tweet():
-    pass
+def delete_tweet(
+    tweet_id: UUID = Path(
+        ...,
+        title="Tweet ID",
+        description="This is the tweet ID",
+        example="3fa85f64-5717-4562-b3fc-2c963f66af43"
+    )
+):
+    """
+    Delete a Tweet
+
+    This path operation delete a tweet.
+
+    Parameters:
+    - Path parameter
+        - tweet_id: UUID
+
+    Returns a json with the deleted tweet information:
+    - tweet_id: UUID
+    - content: str
+    - created_at: datetime
+    - updated_at: Optional[datetime]
+    - by: User
+    """
+    with open("tweets.json", "r+", encoding="utf-8") as f:
+        tweet_id_str = str(tweet_id)
+        tweets = json.loads(f.read())
+        for index in range(len(tweets)):
+            if tweets[index]["tweet_id"] == tweet_id_str:
+                result = tweets.pop(index)
+                f.seek(0)
+                f.write(json.dumps(tweets))
+                f.truncate()
+                return result
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This tweet doesn't exist!"
+        )
 
 
 # ### Update a tweet
@@ -407,5 +483,52 @@ def delete_tweet():
     summary="Update a tweet",
     tags=["Tweets"]
 )
-def update_tweet():
-    pass
+def update_tweet(
+    tweet_id: UUID = Path(
+        ...,
+        title="Tweet ID",
+        description="This is the tweet ID",
+        example="3fa85f64-5717-4562-b3fc-2c963f66af43"
+    ),
+    tweet: Tweet = Body(...)
+):
+    """
+    Update a Tweet
+
+
+    Parameters:
+    - Path parameter
+        - tweet_id: UUID
+    - Request body parameter
+        - tweet: Tweet
+
+    Returns a json with the updated tweet information:
+    - tweet_id: UUID
+    - content: str
+    - created_at: datetime
+    - updated_at: Optional[datetime]
+    - by: User
+    """
+    with open("tweets.json", "r+", encoding="utf-8") as f:
+        tweet_id_str = str(tweet_id)
+        tweets = json.loads(f.read())
+        tweet_dict = tweet.dict()
+        for index in range(len(tweets)):
+            if tweets[index]["tweet_id"] == tweet_id_str:
+                tweets[index]["tweet_id"] = tweet_id_str
+                tweets[index]["content"] = tweet_dict["content"]
+                tweets[index]["created_at"] = str(tweet_dict["created_at"])
+                tweets[index]["updated_at"] = str(tweet_dict["updated_at"])
+                tweets[index]["by"] = tweet_dict["by"]
+                tweets[index]["by"]["user_id"] = str(
+                    tweet_dict["by"]["user_id"])
+                tweets[index]["by"]["birth_date"] = str(
+                    tweet_dict["by"]["birth_date"])
+                f.seek(0)
+                f.write(json.dumps(tweets))
+                f.truncate()
+                return tweets[index]
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="This tweet doesn't exist!"
+        )
